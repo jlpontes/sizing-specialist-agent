@@ -1,0 +1,40 @@
+# Ambiente virtual
+env/
+venv/
+.venv/
+
+# Cache do Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Arquivos temporários
+*.log
+*.tmp
+*.swp
+*.DS_Store
+
+# Saídas/intermediários
+*.out
+*.bak
+
+# Dados locais (não versionar planilhas do sizing)
+rperf_tabela.csv
+rperf_tabela.xlsx
+
+# VS Code
+.vscode/
+
+# Arquivos de pacotes/instalação
+*.egg-info/
+*.egg
+dist/
+build/
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Configurações de sistema
+Thumbs.db
+.DS_Store
