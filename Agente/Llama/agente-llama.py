@@ -1,7 +1,7 @@
 import os
 import logging
 from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from langchain.agents import tool
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.agents.format_scratchpad.openai_tools import (
@@ -92,11 +92,11 @@ def calcular_cenarios_de_sizing(inventario_cliente: List[Servidor], taxa_anual_c
 
 # --- MELHORIA 5: CARREGAMENTO EXPLÍCITO DA API KEY ---
 # Garante que a chave do .env seja usada corretamente
-api_key = os.getenv("GOOGLE_API_KEY")
+api_key = os.getenv("GROQ_API_KEY")
 if not api_key:
-    raise ValueError("A variável de ambiente GOOGLE_API_KEY não foi encontrada. Verifique seu arquivo .env.")
+    raise ValueError("A variável de ambiente GROQ_API_KEY não foi encontrada...")
 
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest", temperature=0, api_key=api_key)
+llm = ChatGroq(model="llama3-70b-8192", temperature=0, api_key=api_key)
 
 tools = [calcular_cenarios_de_sizing]
 llm_with_tools = llm.bind_tools(tools)
