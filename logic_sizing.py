@@ -237,3 +237,77 @@ def rank_cenarios(df_alvo, rperf_final_requerido):
         print("-" * 20)
 
     return top_cenarios
+
+# logic_sizing.py
+
+# ... (suas outras funções aqui) ...
+
+def calcular_e_ranquear_cenarios_completos(
+    df: pd.DataFrame,
+    df_alvo: pd.DataFrame,
+    inventario_cliente: dict,
+    taxa_anual_crescimento: float = 0.0,
+    anos_projecao: int = 0
+) -> list:
+    """
+    Função completa que calcula o rPerf necessário (com projeção)
+    e retorna os cenários de sizing ranqueados.
+    Esta função é projetada para ser usada como uma ferramenta por um agente LLM.
+    """
+    # Passo 1: Calcular rPerf base
+    rperf_base = 0
+    for modelo, dados in inventario_cliente.items():
+        rperf_total_modelo = (
+            dados['servidores'] *
+            dados['cores'] *
+            df.loc[modelo, 'rPerf_por_Core'] *
+            dados['utilizacao']
+        )
+        rperf_base += rperf_total_modelo
+
+    # Passo 2: Aplicar projeção de crescimento
+    rperf_final_requerido = rperf_base * (1 + (taxa_anual_crescimento / 100)) ** anos_projecao
+
+    # Passo 3: Gerar e ranquear cenários (adaptado da sua função rank_cenarios)
+    # ... (Copie e cole toda a lógica de DENTRO da sua função rank_cenarios aqui)
+    # ATENÇÃO: A lógica abaixo é a mesma de rank_cenarios, mas sem os prints
+    cenarios_validos = []
+    for modelo_alvo, dados_alvo in df_alvo.iterrows():
+        # ... (lógica de cálculo de cenários) ...
+        # (copie toda a lógica de cálculo, append em cenarios_validos, etc.)
+        modelo_base_alvo = dados_alvo['Modelo_Base']
+        rperf_por_core_alvo = dados_alvo['rPerf_por_Core']
+        cores_maximos_alvo = dados_alvo['Cores_Maximos']
+        cores_necessarios = rperf_final_requerido / rperf_por_core_alvo
+        num_servidores_teorico = cores_necessarios / cores_maximos_alvo
+        num_servidores_real = math.ceil(num_servidores_teorico)
+        if num_servidores_real == 0: continue
+        cores_por_servidor_media = cores_necessarios / num_servidores_real
+        cores_ativos_arredondado = math.ceil(cores_por_servidor_media)
+        cores_ativos_por_servidor = cores_ativos_arredondado + 1 if cores_ativos_arredondado % 2 != 0 else cores_ativos_arredondado
+        utilizacao_cores = cores_ativos_por_servidor / cores_maximos_alvo
+        if utilizacao_cores < 0.60 or cores_ativos_por_servidor > cores_maximos_alvo: continue
+        rperf_novo_total = num_servidores_real * cores_ativos_por_servidor * rperf_por_core_alvo
+        cenarios_validos.append({
+            'modelo_unico': modelo_alvo,
+            'modelo_base': modelo_base_alvo,
+            'servidores': num_servidores_real,
+            'cores_por_servidor': cores_ativos_por_servidor,
+            'rperf_novo': rperf_novo_total,
+            'utilizacao_cores': utilizacao_cores,
+            'excedente_rperf': rperf_novo_total - rperf_final_requerido
+        })
+    
+    melhores_por_modelo = {}
+    for cenario in cenarios_validos:
+        modelo_base = cenario['modelo_base']
+        if modelo_base not in melhores_por_modelo or \
+           cenario['servidores'] < melhores_por_modelo[modelo_base]['servidores'] or \
+           (cenario['servidores'] == melhores_por_modelo[modelo_base]['servidores'] and
+            cenario['excedente_rperf'] < melhores_por_modelo[modelo_base]['excedente_rperf']):
+            melhores_por_modelo[modelo_base] = cenario
+            
+    lista_de_campeoes = list(melhores_por_modelo.values())
+    cenarios_finais_ordenados = sorted(lista_de_campeoes, key=lambda x: (x['servidores'], x['excedente_rperf']))
+    
+    return cenarios_finais_ordenados[:10]
